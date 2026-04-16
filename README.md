@@ -11,14 +11,26 @@ MSc thesis project — University of Genoa (Supervisor: Prof. Gabriele Moser)
 
 ## 🏆 Results
 
+### Teacher Model (RegNetY-032)
+
+| Dataset | Classes | Teacher Accuracy |
+|---|---|---|
+| UC-Merced | 21 | **94.10%** |
+| AID | 30 | **95.74%** |
+| NWPU-RESISC45 | 45 | **94.27%** |
+| Optimal-31 | 31 | **95.70%** |
+
+### Student Models after Knowledge Distillation (DKD)
+
 | Dataset | Teacher (RegNetY-032) | Student CNN (MobileNetV2) | Student ViT (DeiT) |
 |---|---|---|---|
-| UC-Merced | — | **99.05%** | 98.57% |
-| AID | — | **96.80%** | 95.90% |
-| NWPU-RESISC45 | — | **96.00%** | 95.43% |
-| Optimal-31 | — | **98.11%** | 97.62% |
+| UC-Merced | 94.10% | **99.05%** | 98.57% |
+| AID | 95.74% | **96.80%** | 95.90% |
+| NWPU-RESISC45 | 94.27% | **96.00%** | 95.43% |
+| Optimal-31 | 95.70% | **98.11%** | 97.62% |
 
 > DKD outperformed classical KD in **all 8** dataset × model combinations, with gains up to **+2.76%** on NWPU-RESISC45.
+> Remarkably, student models **surpass the teacher** on all 4 datasets — the core strength of DKD.
 
 ---
 
@@ -26,7 +38,7 @@ MSc thesis project — University of Genoa (Supervisor: Prof. Gabriele Moser)
 
 Aerial and satellite image classification is critical for land cover mapping, disaster monitoring, and urban planning. Large deep learning models achieve high accuracy but are too computationally heavy for edge deployment.
 
-This project applies **Knowledge Distillation (KD)** to compress large models into lightweight, deployable alternatives while preserving accuracy.
+This project applies **Knowledge Distillation (KD)** to compress large models into lightweight, deployable alternatives while preserving — and in fact **exceeding** — teacher accuracy.
 
 ### Architecture
 
@@ -66,19 +78,15 @@ This allows independent weighting of each component, resulting in consistently b
 
 ```
 knowledge-distillation-remote-sensing/
-├── notebooks/
-│   ├── 01_data_preparation.ipynb
-│   ├── 02_teacher_training.ipynb
-│   ├── 03_kd_distillation.ipynb
-│   └── 04_results_analysis.ipynb
-├── models/
-│   ├── teacher.py        ← RegNetY-032 config
-│   ├── student_cnn.py    ← MobileNetV2 config
-│   └── student_vit.py    ← DeiT config
-├── results/
-│   └── accuracy_tables.csv
+├── detection/
+│   └── train_net.py              ← COCO object detection training
+├── tools/
+│   ├── train.py                  ← Main KD training script
+│   ├── eval.py                   ← Model evaluation
+│   └── train_teacher.py          ← Teacher model training
+├── README.md
 ├── requirements.txt
-└── README.md
+└── setup.py
 ```
 
 ---
@@ -89,7 +97,13 @@ knowledge-distillation-remote-sensing/
 git clone https://github.com/dnyalsh/knowledge-distillation-remote-sensing.git
 cd knowledge-distillation-remote-sensing
 pip install -r requirements.txt
-jupyter notebook notebooks/03_kd_distillation.ipynb
+python setup.py develop
+
+# Train teacher model
+python tools/train_teacher.py --train_dir /data/AID/train --val_dir /data/AID/val --num_classes 30 --output Teacher_AID.pt
+
+# Run KD training
+python tools/train.py --cfg configs/dkd_config.yaml
 ```
 
 ---
@@ -100,7 +114,7 @@ jupyter notebook notebooks/03_kd_distillation.ipynb
 |---|---|
 | PyTorch | Model training & distillation |
 | torchvision | CNN architectures (MobileNetV2, RegNetY) |
-| timm | Vision Transformer (DeiT) |
+| timm | Vision Transformer (DeiT) + RegNetY teacher |
 | NumPy, Pandas | Data processing |
 | Matplotlib, Seaborn | Results visualisation |
 
